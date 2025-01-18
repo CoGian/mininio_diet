@@ -5,7 +5,7 @@ An app to count the carbohydrates for sweet mininio
 from typing import List, Tuple
 import toga
 from toga.style import Pack
-from toga.style.pack import CENTER, COLUMN, Pack
+from toga.style.pack import CENTER, COLUMN, Pack, ROW
 from pathlib import Path
 
 
@@ -78,9 +78,58 @@ class MininioDiet(toga.App):
             ,
             children=[quantity_g_ml_button, quantity_item_button]
         )
+        
+        selected_item_carbohydrates_label = toga.Label("Υδατάνθρακες (g) επιλεγμένου προϊόντος")
+        multiplcation_label = toga.Label("x")
+        quantity_input = toga.TextInput(placeholder="Εισάγετε ποσότητα...")
+        
+        # Layout for quantity input
+        quantity_input_box = toga.Box(
+            style=Pack(
+                padding=10,
+                direction=ROW,
+                alignment=CENTER
+            )
+            ,
+            children=[selected_item_carbohydrates_label, multiplcation_label, quantity_input]
+        )
+        
+        # Layout for divider
+        divide_label = toga.Label("_" * 60)
+        divider_box = toga.Box(
+            style=Pack(
+                padding=10,
+                direction=ROW,
+                alignment=CENTER,
+            )
+            ,
+            children=[divide_label]
+        )
+        
+        # Layout for selected item quantity
+        selected_item_quantinty_label = toga.Label("Ποσότητα επιλεγμένου προϊόντος")
+        selected_item_quantinty_box = toga.Box(
+            style=Pack(
+                padding=10,
+                direction=ROW,
+                alignment=CENTER
+            )
+            ,
+            children=[selected_item_quantinty_label]
+            )
+
+        calculation_box = toga.Box(
+            style=Pack(
+                padding=10,
+                direction=COLUMN,
+                alignment=CENTER
+            )
+            ,
+            children=[quantity_input_box, divider_box, selected_item_quantinty_box]
+        )
         # Main content box
         content: toga.Box = toga.Box(
-            children=[main_image_box, dropdown_box, buttons_box],
+            children=[main_image_box, dropdown_box, buttons_box, calculation_box],
             style=Pack(direction=COLUMN, padding=10)
         )
 
@@ -123,6 +172,11 @@ class MininioDiet(toga.App):
         if widget.selection is not None:
             self.selected_item = widget.selection.επιλογές # Access the selected option text
             await self.main_window.dialog(toga.InfoDialog("ΕΠΙΛΟΓΗ", f"Επιλέξατε: {self.selected_item}"))
+            self.selected_item_quantity = None
+            self.selected_item_carbohydrates = self.items[self.selected_item]["carbohydrates_g"]
+            self.main_window.content.children[3].children[0].children[0].text = f"{self.selected_item_carbohydrates}"
+            self.main_window.content.children[3].children[2].children[0].text = "Ποσότητα επιλεγμένου προϊόντος"
+
 
     async def check_if_selected_item(self) -> None:
         """
@@ -131,6 +185,9 @@ class MininioDiet(toga.App):
         """
         if "selected_item" not in self.__dict__ or self.selected_item is None:
             await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε επιλέξει προϊόν."))
+            return False
+        
+        return True
         
     async def quantity_button_handler(self, widget: toga.Button) -> None:
         """
@@ -139,7 +196,8 @@ class MininioDiet(toga.App):
         :return: None
         """
         
-        await self.check_if_selected_item()
+        if not await self.check_if_selected_item():
+            return
         
         if widget.text == "g/ml":
             self.selected_item_quantity = self.items[self.selected_item]["quantity_g_ml"]
@@ -148,7 +206,10 @@ class MininioDiet(toga.App):
             
         if self.selected_item_quantity == '':
             await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", f"Δεν έχεi οριστεί ποσότητα σε {widget.text} για {self.selected_item}."))
+            self.main_window.content.children[3].children[2].children[0].text = "Ποσότητα επιλεγμένου προϊόντος"
             return
+        
+        self.main_window.content.children[3].children[2].children[0].text = f"{self.selected_item_quantity}"
             
 def main() -> MininioDiet:
     return MininioDiet(formal_name="mininioDiet", 
