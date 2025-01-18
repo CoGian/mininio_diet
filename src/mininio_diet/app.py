@@ -62,9 +62,25 @@ class MininioDiet(toga.App):
             children=[main_imageview]
         )
         
+        # quantity g/ml button
+        quantity_g_ml_button = toga.Button("g/ml", on_press=self.quantity_button_handler)
+        
+        # quantity item button
+        quantity_item_button = toga.Button("τμχ/κσ/φλ", on_press=self.quantity_button_handler)
+        
+        # Layout for buttons
+        buttons_box = toga.Box(
+            style=Pack(
+                padding=10,
+                direction=COLUMN,
+                alignment=CENTER
+            )
+            ,
+            children=[quantity_g_ml_button, quantity_item_button]
+        )
         # Main content box
         content: toga.Box = toga.Box(
-            children=[main_image_box, dropdown_box],
+            children=[main_image_box, dropdown_box, buttons_box],
             style=Pack(direction=COLUMN, padding=10)
         )
 
@@ -81,8 +97,8 @@ class MininioDiet(toga.App):
             self.items = dict()
             fitems.readline() # Skip the header
             for line in fitems.readlines():
-                columns = line.split(";")
-                self.items[columns[0]] = {"queantinty_gr_ml": columns[1],
+                columns = line.strip("\n").split(";")
+                self.items[columns[0]] = {"quantity_g_ml": columns[1],
                                      "quantity_item": columns[2],
                                      "carbohydrates_g": columns[3]}
                 
@@ -105,11 +121,35 @@ class MininioDiet(toga.App):
         :return: None
         """
         if widget.selection is not None:
-            self.selected_option = widget.selection.options # Access the selected option text
-            await self.main_window.dialog(toga.InfoDialog("ΕΠΙΛΟΓΗ", f"Επιλέξατε: {self.selected_option}"))
+            self.selected_item = widget.selection.επιλογές # Access the selected option text
+            await self.main_window.dialog(toga.InfoDialog("ΕΠΙΛΟΓΗ", f"Επιλέξατε: {self.selected_item}"))
 
-
-
+    async def check_if_selected_item(self) -> None:
+        """
+        Check if an item has been selected.
+        :return: None
+        """
+        if "selected_item" not in self.__dict__ or self.selected_item is None:
+            await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε επιλέξει προϊόν."))
+        
+    async def quantity_button_handler(self, widget: toga.Button) -> None:
+        """
+        Handle the quantity button press.
+        :param widget: The button widget.
+        :return: None
+        """
+        
+        await self.check_if_selected_item()
+        
+        if widget.text == "g/ml":
+            self.selected_item_quantity = self.items[self.selected_item]["quantity_g_ml"]
+        else:
+            self.selected_item_quantity = self.items[self.selected_item]["quantity_item"]
+            
+        if self.selected_item_quantity == '':
+            await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", f"Δεν έχεi οριστεί ποσότητα σε {widget.text} για {self.selected_item}."))
+            return
+            
 def main() -> MininioDiet:
     return MininioDiet(formal_name="mininioDiet", 
                        app_id="com.kgiantsios.mininio-diet")
