@@ -50,7 +50,7 @@ class MininioDiet(toga.App):
         
         # load main image
         main_image = toga.Image(self.resources_folder.joinpath("mininio_diet"))
-        main_imageview = toga.ImageView(main_image, style=Pack(width=100, height=100))
+        main_imageview = toga.ImageView(main_image, style=Pack(width=50, height=50))
         
         # Layuot for image
         main_image_box = toga.Box(
@@ -80,9 +80,9 @@ class MininioDiet(toga.App):
             children=[self.quantity_g_ml_button, self.quantity_item_button]
         )
         
-        self.selected_item_carbohydrates_label = toga.Label("Υδατάνθρακες (g) επιλεγμένου προϊόντος")
+        self.selected_item_carbohydrates_label = toga.Label("Υδατάνθρακες (g)")
         self.multiplcation_label = toga.Label("x")
-        self.quantity_textInput = toga.TextInput(placeholder="Εισάγετε ποσότητα...")
+        self.quantity_textInput = toga.TextInput(placeholder="Εισάγετε ποσότητα")
         
         # Layout for quantity input
         quantity_input_box = toga.Box(
@@ -98,7 +98,7 @@ class MininioDiet(toga.App):
         )
         
         # Layout for divider
-        self.divide_label = toga.Label("_" * 60)
+        self.divide_label = toga.Label("_" * 50)
         divider_box = toga.Box(
             style=Pack(
                 padding=10,
@@ -149,7 +149,7 @@ class MininioDiet(toga.App):
         
         self.added_items_results = []
         self.added_items_label = toga.Label("Προστέθηκαν τα παρακάτω προϊόντα:")
-        
+        self.items_multiline_text_input = toga.MultilineTextInput(style=Pack(height=100, font_size=9))
         
         # Layout for added items
         added_items_box = toga.Box(
@@ -159,24 +159,28 @@ class MininioDiet(toga.App):
                 alignment=CENTER
             )
             ,
-            children=[self.added_items_label]
+            children=[self.added_items_label, self.items_multiline_text_input]
         )
         
         self.special_divider = None
-        morning_night_button = toga.Button("Υπολογισμος για Πρωί/Βράδυ", on_press=self.morning_night_button_handler)
-        midday_button = toga.Button("Υπολογισμος για Μεσημέρι", on_press=self.midday_button_handler)
+        morning_button = toga.Button("Πρωί", on_press=self.morning_button_handler)
+        midday_button = toga.Button("Μεσημέρι", on_press=self.midday_button_handler)
+        afternoon_button = toga.Button("Απόγευμα", on_press=self.afternoon_button_handler)
+
         # Layour for final calculation buttons
         final_calculation_buttons_box = toga.Box(    
             style=Pack(
                 padding=10,
-                direction=COLUMN,
-                alignment=CENTER
+                direction=ROW,
+                alignment=CENTER,
+                flex=1
             )
             ,
-            children=[morning_night_button, midday_button]
+            children=[morning_button, midday_button, afternoon_button]
         )
         
         self.final_result_label = toga.Label("Τελικό αποτέλεσμα: ")
+        self.final_result_text_input = toga.TextInput(style=Pack(font_size=9))
         clear_button = toga.Button("Καθαρισμός", on_press=self.final_clear)
         
         # Layout for final result
@@ -187,7 +191,7 @@ class MininioDiet(toga.App):
                 alignment=CENTER
             )
             ,
-            children=[self.final_result_label, clear_button]
+            children=[self.final_result_label, self.final_result_text_input, clear_button]
         )
         
         # Main unscrollable content box
@@ -228,13 +232,13 @@ class MininioDiet(toga.App):
         self.selected_item_quantity = None
         self.selected_item_quantinty_label.text = "Ποσότητα επιλεγμένου προϊόντος"
         self.input_quantity = None
-        self.quantity_textInput.placeholder = "Εισάγετε ποσότητα..."
+        self.quantity_textInput.placeholder = "Εισάγετε ποσότητα"
         self.quantity_textInput.value = None
         self.result_label.text = "Αποτέλεσμα: "
         self.result_label.style.color = "black"
         self.result = None
         self.selected_item_carbohydrates = None
-        self.selected_item_carbohydrates_label.text = "Υδατάνθρακες (g) επιλεγμένου προϊόντος"
+        self.selected_item_carbohydrates_label.text = "Υδατάνθρακες (g)"
         
         
     def read_items(self) -> None: 
@@ -295,7 +299,7 @@ class MininioDiet(toga.App):
         :return: None
         """
         if "selected_item_quantity" not in self.__dict__ or self.selected_item_quantity is None:
-            await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε επιλέξει ποσότητα (g/ml) ή τμχ/κσ/φλ."))
+            await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε επιλέξει (g/ml) ή τμχ/κσ/φλ."))
             return False
         
         return True
@@ -357,33 +361,33 @@ class MininioDiet(toga.App):
             await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε υπολογίσει το αποτέλεσμα."))
             return
         self.added_items_results.append(self.result)
-        self.added_items_label.text = self.added_items_label.text + f"\n{self.selected_item}: {round(self.result, 3)} g"
+        measurement_method = self.selected_item_quantity.split(" ")[1]
+        self.items_multiline_text_input.value = self.items_multiline_text_input.value + f"{self.input_quantity} {measurement_method} {self.selected_item}: {round(self.result, 3)} g\n"
         self.clear()
         self.selected_item = None
+    
         
-    async def morning_night_button_handler(self, widget: toga.Button) -> None:
+    async def daytime_button_press(self, widget: toga.Button, special_divider: int) -> None:
         """
-        Handle the morning/night button press.
+        Handle the button press for morning, afternoon, or midday.
         :param widget: The button widget.
+        :param special_divider: The divider value for the calculation.
         :return: None
         """
         if len(self.added_items_results) == 0:
             await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε προσθέσει προϊόντα."))
             return
-        self.special_divider = 12
+        self.special_divider = special_divider
         self.final_calculation()
-                  
+    
+    async def morning_button_handler(self, widget: toga.Button) -> None:
+        await self.daytime_button_press(widget, special_divider=14)
+
+    async def afternoon_button_handler(self, widget: toga.Button) -> None:
+        await self.daytime_button_press(widget, special_divider=12)
+
     async def midday_button_handler(self, widget: toga.Button) -> None:
-        """
-        Handle the midday button press.
-        :param widget: The button widget.
-        :return: None
-        """
-        if len(self.added_items_results) == 0:
-            await self.main_window.dialog(toga.InfoDialog("ΠΡΟΣΟΧΗ", "Δεν έχετε προσθέσει προϊόντα."))
-            return
-        self.special_divider = 15
-        self.final_calculation()
+        await self.daytime_button_press(widget, special_divider=15)
     
     def final_calculation(self) -> None:
         """
@@ -393,6 +397,7 @@ class MininioDiet(toga.App):
             return
         final_result = sum(self.added_items_results) / self.special_divider
         self.final_result_label.text = f"Τελικό αποτέλεσμα: {round(final_result, 3)}"
+        self.final_result_text_input.value = f" {round(sum(self.added_items_results), 3)} / {self.special_divider} = {round(final_result, 3)}"
         self.final_result_label.style.color = "green"
         
     def final_clear(self, widget: toga.Button) -> None:
@@ -404,10 +409,11 @@ class MininioDiet(toga.App):
         self.clear()
         self.selected_item = None
         self.added_items_results = []
-        self.added_items_label.text = "Προστέθηκαν τα παρακάτω προϊόντα:"
+        self.items_multiline_text_input.value = ""
         self.special_divider = None
         self.final_result_label.text = "Τελικό αποτέλεσμα: "
         self.final_result_label.style.color = "black"
+        self.final_result_text_input.value = ""
         
 def main() -> MininioDiet:
     return MininioDiet(formal_name="mininioDiet", 

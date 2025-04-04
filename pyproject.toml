@@ -2,7 +2,7 @@
 [tool.briefcase]
 project_name = "mininioDiet"
 bundle = "com.kgiantsios"
-version = "0.0.1"
+version = "0.0.2"
 url = "https://kgiantsios.com/mininio_diet"
 license.file = "LICENSE"
 author = "Konstantinos Giantsios"
